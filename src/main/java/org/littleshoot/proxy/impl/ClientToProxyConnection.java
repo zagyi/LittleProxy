@@ -1013,14 +1013,23 @@ public class ClientToProxyConnection extends ProxyConnection<HttpRequest> {
      * @return
      */
     private HttpRequest copy(HttpRequest original) {
+        DefaultHttpRequest result;
+
         if (original instanceof DefaultFullHttpRequest) {
             ByteBuf content = ((DefaultFullHttpRequest) original).content();
-            return new DefaultFullHttpRequest(original.getProtocolVersion(),
-                    original.getMethod(), original.getUri(), content);
+            result = new DefaultFullHttpRequest(original.getProtocolVersion(),
+                original.getMethod(), original.getUri(), content);
         } else {
-            return new DefaultHttpRequest(original.getProtocolVersion(),
+            result = new DefaultHttpRequest(original.getProtocolVersion(),
                     original.getMethod(), original.getUri());
         }
+
+        for (Map.Entry<String, String> header : original.headers())
+        {
+            result.headers().add(header.getKey(), header.getValue());
+        }
+
+        return result;
     }
 
     /**
