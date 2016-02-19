@@ -5,6 +5,7 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -105,6 +106,7 @@ public class DefaultHttpProxyServer implements HttpProxyServer {
     private final ChainedProxyManager chainProxyManager;
     private final MitmManager mitmManager;
     private final HttpFiltersSource filtersSource;
+    private final ChannelHandler pipelineCustomizer;
     private final boolean transparent;
     private final int connectTimeout;
     private volatile int idleConnectionTimeout;
@@ -232,6 +234,7 @@ public class DefaultHttpProxyServer implements HttpProxyServer {
             ChainedProxyManager chainProxyManager,
             MitmManager mitmManager,
             HttpFiltersSource filtersSource,
+            ChannelHandler pipelineCustomizer,
             boolean transparent,
             int idleConnectionTimeout,
             Collection<ActivityTracker> activityTrackers,
@@ -250,6 +253,7 @@ public class DefaultHttpProxyServer implements HttpProxyServer {
         this.chainProxyManager = chainProxyManager;
         this.mitmManager = mitmManager;
         this.filtersSource = filtersSource;
+        this.pipelineCustomizer = pipelineCustomizer;
         this.transparent = transparent;
         this.idleConnectionTimeout = idleConnectionTimeout;
         if (activityTrackers != null) {
@@ -537,6 +541,11 @@ public class DefaultHttpProxyServer implements HttpProxyServer {
         return filtersSource;
     }
 
+    public ChannelHandler getPipelineCustomizer()
+    {
+        return pipelineCustomizer;
+    }
+
     protected Collection<ActivityTracker> getActivityTrackers() {
         return activityTrackers;
     }
@@ -564,6 +573,7 @@ public class DefaultHttpProxyServer implements HttpProxyServer {
         private ChainedProxyManager chainProxyManager = null;
         private MitmManager mitmManager = null;
         private HttpFiltersSource filtersSource = new HttpFiltersSourceAdapter();
+        private ChannelHandler pipelineCustomizer = null;
         private boolean transparent = false;
         private int idleConnectionTimeout = 70;
         private Collection<ActivityTracker> activityTrackers = new ConcurrentLinkedQueue<ActivityTracker>();
@@ -736,6 +746,12 @@ public class DefaultHttpProxyServer implements HttpProxyServer {
         }
 
         @Override
+        public HttpProxyServerBootstrap withPipelineCustomizer(ChannelHandler pipelineCustomizer) {
+            this.pipelineCustomizer = pipelineCustomizer;
+            return this;
+        }
+
+        @Override
         public HttpProxyServerBootstrap withUseDnsSec(boolean useDnsSec) {
             if (useDnsSec) {
                 this.serverResolver = new DnsSecServerResolver();
@@ -814,7 +830,7 @@ public class DefaultHttpProxyServer implements HttpProxyServer {
                     transportProtocol, determineListenAddress(),
                     sslEngineSource, authenticateSslClients,
                     proxyAuthenticator, chainProxyManager, mitmManager,
-                    filtersSource, transparent,
+                    filtersSource, pipelineCustomizer, transparent,
                     idleConnectionTimeout, activityTrackers, connectTimeout,
                     serverResolver, readThrottleBytesPerSecond, writeThrottleBytesPerSecond,
                     localAddress, proxyAlias);

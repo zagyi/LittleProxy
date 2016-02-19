@@ -850,6 +850,10 @@ public class ProxyToServerConnection extends ProxyConnection<HttpResponse> {
                 8192 * 2));
         pipeline.addLast("responseReadMonitor", responseReadMonitor);
 
+        if(proxyServer.getPipelineCustomizer() != null) {
+            pipeline.addLast("pipelineCustomizer", proxyServer.getPipelineCustomizer());
+        }
+
         // Enable aggregation for filtering if necessary
         int numberOfBytesToBuffer = proxyServer.getFiltersSource()
                 .getMaximumResponseBufferSizeInBytes();

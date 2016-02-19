@@ -1,5 +1,6 @@
 package org.littleshoot.proxy;
 
+import io.netty.channel.ChannelHandler;
 import org.littleshoot.proxy.impl.ThreadPoolConfiguration;
 
 import java.net.InetSocketAddress;
@@ -195,6 +196,17 @@ public interface HttpProxyServerBootstrap {
      */
     HttpProxyServerBootstrap withFiltersSource(
             HttpFiltersSource filtersSource);
+
+    /**
+     * Specify a {@link ChannelHandler} to use for the dynamic reconfiguration
+     * of the channel handler pipeline. This handler is placed after the http
+     * request/response decoder, so that it can make decisions based on http
+     * message headers.
+     *
+     * @param pipelineCustomizer
+     * @return
+     */
+    HttpProxyServerBootstrap withPipelineCustomizer(ChannelHandler pipelineCustomizer);
 
     /**
      * <p>
